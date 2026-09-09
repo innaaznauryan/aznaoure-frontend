@@ -40,7 +40,9 @@
     "title": "Our Collections",
     "subtitle": "Discover",
     "description": "Explore our curated selection of exquisite jewelry, each piece crafted to perfection.",
-    "all": "All"
+    "all": "All",
+    "search": "Smart search by story, occasion, or style...",
+    "clear": "Clear search"
   },
   "favorites": {
     "save": "Save to favorites",

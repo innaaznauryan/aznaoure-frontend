@@ -13,3 +13,12 @@ export async function fetchProductById(id: string) {
   const product = await response.json();
   return { ...product, image: getMediaUrl(product.image) };
 }
+
+export async function searchProducts(query: string) {
+  const response = await fetch(
+    `${BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`
+  );
+  if (!response.ok) throw new Error("Failed to search products");
+  const products = await response.json();
+  return products.map((p) => ({ ...p, image: getMediaUrl(p.image) }));
+}

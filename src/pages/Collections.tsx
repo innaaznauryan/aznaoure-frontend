@@ -2,11 +2,13 @@ import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import SEO from "@/components/SEO";
 import { ProductGrid } from "@/components/products/ProductGrid";
+import { SearchBar } from "@/components/products/SearchBar";
 import { PaginationControls } from "@/components/PaginationControls.tsx";
 import { useCategoryChange } from "@/hooks/use-category-change.tsx";
 import { categories, Category } from "@/lib/products.ts";
 import { getLang } from "@/lib/get-lang.ts";
 import { useProducts } from "@/hooks/use-products.ts";
+import { useProductSearch } from "@/hooks/use-product-search.ts";
 import { usePagination } from "@/hooks/use-pagination.tsx";
 
 const Collections = () => {
@@ -14,10 +16,27 @@ const Collections = () => {
   const lang = getLang(i18n.language);
   const { selectedCategory, handleCategoryChange } = useCategoryChange();
   const { products, loading, error, getProductsByCategory } = useProducts();
+  const {
+    query,
+    setQuery,
+    results: searchResults,
+    loading: searchLoading,
+    error: searchError,
+  } = useProductSearch();
+
+  const isSearching = query.trim().length > 0;
 
   const filteredProducts = selectedCategory
     ? getProductsByCategory(selectedCategory)
     : products;
+
+  const searchResultsFiltered = selectedCategory
+    ? searchResults.filter((p) => p.category === selectedCategory)
+    : searchResults;
+
+  const displayedProducts = isSearching ? searchResultsFiltered : filteredProducts;
+  const isLoading = isSearching ? searchLoading : loading;
+  const displayedError = isSearching ? searchError : error;
 
   const {
     paginatedItems: currentProducts,
@@ -25,8 +44,8 @@ const Collections = () => {
     totalPages,
     goToPage,
     nextPage,
-    prevPage
-  } = usePagination(filteredProducts);
+    prevPage,
+  } = usePagination(displayedProducts);
 
   return (
     <div className="min-h-screen">
@@ -60,9 +79,10 @@ const Collections = () => {
       {/* Filters */}
       <section className="py-8 sm:py-10 lg:py-12 border-b border-border">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
+          <div className="flex flex-wrap justify-center mb-8 gap-2 sm:gap-4">
             <button
               onClick={() => handleCategoryChange(null)}
+              aria-pressed={!selectedCategory}
               className={`px-4 sm:px-6 py-2 text-xs sm:text-sm font-sans tracking-widest uppercase transition-all duration-300 ${
                 !selectedCategory
                   ? "bg-foreground text-background"
@@ -85,6 +105,7 @@ const Collections = () => {
               </button>
             ))}
           </div>
+          <SearchBar value={query} onChange={setQuery} />
         </div>
       </section>
 
@@ -93,14 +114,14 @@ const Collections = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <ProductGrid
             products={currentProducts}
-            loading={loading}
-            error={error}
+            loading={isLoading}
+            error={displayedError}
           />
         </div>
       </section>
 
       {/* Pagination */}
-      {filteredProducts.length > 0 && (
+      {displayedProducts.length > 0 && (
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
