@@ -3,7 +3,7 @@ import { Product } from "@/lib/products.ts";
 import { searchProducts, getSearchQuota } from "@/api/products";
 import { useTranslation } from "react-i18next";
 
-export function useProductSearch(debounceMs = 400) {
+export function useProductSearch(isAuthenticated: boolean, debounceMs = 400) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
@@ -13,16 +13,17 @@ export function useProductSearch(debounceMs = 400) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     getSearchQuota()
       .then((data) => {
         setSemanticRemaining(data.remaining);
         setSemantic(data.remaining > 0);
       })
       .catch(() => setSemanticRemaining(null));
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!query.trim()) {
+    if (!isAuthenticated || !query.trim()) {
       setResults([]);
       setError(null);
       setLoading(false);
@@ -46,7 +47,7 @@ export function useProductSearch(debounceMs = 400) {
     }, debounceMs);
 
     return () => clearTimeout(timeoutId);
-  }, [t, query, debounceMs]);
+  }, [isAuthenticated, t, query, debounceMs]);
 
   return { query, setQuery, results, semantic, semanticRemaining, loading, error };
 }

@@ -25,7 +25,7 @@ const Collections = () => {
     semantic,
     loading: searchLoading,
     error: searchError,
-  } = useProductSearch();
+  } = useProductSearch(isAuthenticated);
 
   const isSearching = query.trim().length > 0;
 
