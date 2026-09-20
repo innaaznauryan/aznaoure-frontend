@@ -1,4 +1,4 @@
-import { BASE_URL, getMediaUrl } from "@/api/client";
+import { BASE_URL, apiFetch, getMediaUrl } from "@/api/client";
 
 export async function fetchProducts() {
   const response = await fetch(`${BASE_URL}/api/products/`);
@@ -15,10 +15,20 @@ export async function fetchProductById(id: string) {
 }
 
 export async function searchProducts(query: string) {
-  const response = await fetch(
-    `${BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`
+  const response = await apiFetch(
+      `${BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`
   );
   if (!response.ok) throw new Error("Failed to search products");
-  const products = await response.json();
-  return products.map((p) => ({ ...p, image: getMediaUrl(p.image) }));
+  const data = await response.json();
+  return {
+    results: data.results.map((p) => ({ ...p, image: getMediaUrl(p.image) })),
+    semantic: data.semantic,
+    semanticRemaining: data.semantic_remaining,
+  };
+}
+
+export async function getSearchQuota() {
+  const response = await apiFetch(`${BASE_URL}/api/products/search/quota`);
+  if (!response.ok) throw new Error("Failed to fetch search quota");
+  return await response.json() as Promise<{ remaining: number; limit: number }>;
 }

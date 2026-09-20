@@ -7,11 +7,13 @@ import { PaginationControls } from "@/components/PaginationControls.tsx";
 import { useCategoryChange } from "@/hooks/use-category-change.tsx";
 import { categories, Category } from "@/lib/products.ts";
 import { getLang } from "@/lib/get-lang.ts";
+import { useAuth } from "@/context/AuthContext.tsx";
 import { useProducts } from "@/hooks/use-products.ts";
 import { useProductSearch } from "@/hooks/use-product-search.ts";
 import { usePagination } from "@/hooks/use-pagination.tsx";
 
 const Collections = () => {
+  const { isAuthenticated } = useAuth();
   const { t, i18n } = useTranslation();
   const lang = getLang(i18n.language);
   const { selectedCategory, handleCategoryChange } = useCategoryChange();
@@ -20,6 +22,7 @@ const Collections = () => {
     query,
     setQuery,
     results: searchResults,
+    semantic,
     loading: searchLoading,
     error: searchError,
   } = useProductSearch();
@@ -79,7 +82,7 @@ const Collections = () => {
       {/* Filters */}
       <section className="py-8 sm:py-10 lg:py-12 border-b border-border">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center mb-8 gap-2 sm:gap-4">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
             <button
               onClick={() => handleCategoryChange(null)}
               aria-pressed={!selectedCategory}
@@ -105,7 +108,11 @@ const Collections = () => {
               </button>
             ))}
           </div>
-          <SearchBar value={query} onChange={setQuery} />
+          {isAuthenticated && (
+            <div className="mt-8">
+              <SearchBar value={query} semantic={semantic} onChange={setQuery} />
+            </div>
+          )}
         </div>
       </section>
 

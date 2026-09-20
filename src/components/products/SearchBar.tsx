@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 
 interface SearchBarProps {
   value: string;
+  semantic: boolean;
   onChange: (value: string) => void;
 }
 
-export const SearchBar = ({ value, onChange }: SearchBarProps) => {
+export const SearchBar = ({ value, semantic, onChange }: SearchBarProps) => {
   const { t } = useTranslation();
 
   return (
@@ -16,7 +17,7 @@ export const SearchBar = ({ value, onChange }: SearchBarProps) => {
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={t("collections.search")}
+        placeholder={semantic ? t("collections.smartSearch") : t("collections.nameSearch")}
         className="w-full pl-11 pr-10 py-3 bg-secondary border border-border text-sm focus:outline-none focus:ring-1 focus:ring-foreground transition-all"
       />
       {value && (
