@@ -1,4 +1,4 @@
-export type Category = "rings" | "necklaces" | "earrings" | "bracelets" | "brooches";
+export type Category = "rings" | "necklaces" | "earrings" | "bracelets" | "brooches" | "others";
 
 type TranslatedString = {
   en: string
@@ -61,7 +61,7 @@ export const categories: Record<
     },
     description: {
       en: "Wrist adornments of distinction",
-      hy: "Եվ նրբագեղ ապարանջաններ"
+      hy: "Նրբագեղ ապարանջաններ"
     }
   },
   brooches: {
@@ -74,4 +74,14 @@ export const categories: Record<
       hy: "Շքեղ շեշտադրման համար"
     }
   },
+  others: {
+    name: {
+      en: "Other",
+      hy: "Այլ"
+    },
+    description: {
+      en: "Discover pieces beyond the familiar",
+      hy: "Բացահայտեք յուրահատուկ ստեղծագործություններ"
+    }
+  }
 }
