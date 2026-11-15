@@ -5,7 +5,7 @@ import { categories } from "@/lib/products";
 import { getLang } from "@/lib/get-lang.ts";
 import { getMediaUrl } from "@/api/client.ts";
 
-const logo = getMediaUrl("images/logo-silver.webp")
+const logo = getMediaUrl("images/logo.webp")
 
 export const Footer = () => {
   const { t, i18n } = useTranslation();

@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext.tsx";
 import { NavLink } from "@/components/ui/nav-link.tsx";
 import LanguageSwitcher from "@/components/LanguageSwitcher.tsx";
 
-const logo = getMediaUrl("images/logo-bronze.webp")
+const logo = getMediaUrl("images/logo.webp")
 
 export const Header = () => {
   const { t } = useTranslation();
