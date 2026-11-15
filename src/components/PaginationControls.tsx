@@ -26,7 +26,9 @@ export const PaginationControls = ({
     <Pagination className="mt-6">
       <PaginationPrevious
         onClick={prevPage}
-        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+        className={`cursor-pointer ${
+          currentPage === 1 ? "pointer-events-none opacity-50" : ""
+        }`}
       />
 
       <PaginationContent>
@@ -34,7 +36,9 @@ export const PaginationControls = ({
           <PaginationItem key={i}>
             <PaginationLink
               isActive={currentPage === i + 1}
-              className={currentPage === i + 1 ? "pointer-events-none" : ""}
+              className={`cursor-pointer ${
+                currentPage === i + 1 ? "pointer-events-none" : ""
+              }`}
               onClick={() => goToPage(i + 1)}
             >
               {i + 1}
@@ -45,7 +49,9 @@ export const PaginationControls = ({
 
       <PaginationNext
         onClick={nextPage}
-        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+        className={`cursor-pointer ${
+          currentPage === totalPages ? "pointer-events-none opacity-50" : ""
+        }`}
       />
     </Pagination>
   );

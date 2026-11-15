@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Product } from "@/lib/products.ts";
 
-export function usePagination (items: Product[], itemsPerPage: number = 8) {
+export function usePagination (items: Product[], itemsPerPage: number = 12) {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get("page")) || 1;
   const totalPages = Math.ceil(items.length / itemsPerPage);
