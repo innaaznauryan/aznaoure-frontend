@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getMediaUrl } from "@/api/client.ts";
 import { useAuth } from "@/context/AuthContext.tsx";
 import { NavLink } from "@/components/ui/nav-link.tsx";
 import LanguageSwitcher from "@/components/LanguageSwitcher.tsx";
+import { useCart } from "@/context/CartContext";
 
 const logo = getMediaUrl("images/logo.webp")
 
 export const Header = () => {
   const { t } = useTranslation();
   const { isAuthenticated, user } = useAuth();
+  const { totalItems, toggleCart } = useCart();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
@@ -69,6 +74,26 @@ export const Header = () => {
           </nav>
 
           <div className="flex items-center gap-4 sm:gap-6">
+            <button
+              type="button"
+              onClick={() => {
+                if (isAuthenticated) {
+                  toggleCart();
+                } else {
+                  navigate("/signin", { state: { from: { pathname: "/cart" } } });
+                }
+              }}
+              className="hidden lg:block relative p-2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={`${t("navigation.cart")} (${totalItems})`}
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {totalItems > 0 && (
+                <span className="absolute -right-1 -top-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+
             {/* Auth link - desktop */}
             <NavLink
               to={isAuthenticated ? "/profile" : "/signin"}
@@ -122,6 +147,21 @@ export const Header = () => {
               >
                 {isAuthenticated ? t("navigation.profile") : t("navigation.signIn")}
               </NavLink>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  if (isAuthenticated) {
+                    toggleCart();
+                  } else {
+                    navigate("/signin", { state: { from: location } });
+                  }
+                }}
+                className="text-lg font-sans tracking-widest uppercase py-2 text-muted-foreground flex items-center gap-2"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                {t("navigation.cart")} ({totalItems})
+              </button>
             </nav>
           </motion.div>
         )}

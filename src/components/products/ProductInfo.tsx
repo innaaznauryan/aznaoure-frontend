@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { getLang } from "@/lib/get-lang.ts";
 import { useFavorites } from "@/context/FavoritesContext.tsx";
+import { AddToCartButton } from "@/components/products/AddToCartButton";
 
 interface ProductInfoProps {
   product: Product;
@@ -70,9 +71,16 @@ export const ProductInfo = ({ product }: ProductInfoProps) => {
           size="lg"
           className="sm:size-xl sm:flex-shrink-0"
           onClick={() => toggleFavorite(product.id)}
+          aria-label={t("favorites.save")}
+          title={t("favorites.save")}
         >
           <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${isFavorite(product.id) ? "fill-rose-500" : ""}`} />
         </Button>
+        <AddToCartButton
+          size="lg"
+          className="sm:size-xl sm:flex-shrink-0"
+          product={product}
+        />
       </div>
     </motion.div>
   )

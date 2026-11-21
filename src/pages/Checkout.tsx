@@ -1,80 +1,24 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, Lock } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/context/CartContext";
-import { useToast } from "@/hooks/use-toast";
 import { getLang } from "@/lib/get-lang.ts";
 import { formatPrice } from "@/lib/utils";
 
 const Checkout = () => {
   const { i18n } = useTranslation();
   const lang = getLang(i18n.language);
-  const { state, dispatch, totalPrice } = useCart();
-  const { toast } = useToast();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
-
-    try {
-      // Simulate processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      setIsComplete(true);
-      dispatch({ type: "CLEAR_CART" });
-
-      toast({
-        title: "Order Confirmed",
-        description: "Thank you for your purchase. You will receive a confirmation email shortly.",
-      });
-    } catch (error) {
-      console.error("Error processing order:", error);
-      toast({
-        title: "Error",
-        description: "There was an error processing your order. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  if (isComplete) {
-    return (
-      <div className="min-h-screen flex items-center justify-center py-12 sm:py-24 px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md text-center w-full"
-        >
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6 sm:mb-8">
-            <Check className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-          </div>
-          <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl mb-3 sm:mb-4">Thank You</h1>
-          <p className="text-muted-foreground text-sm sm:text-base mb-6 sm:mb-8 px-4">
-            Your order has been placed successfully. We'll send you an email
-            confirmation with your order details and tracking information.
-          </p>
-          <Button variant="luxury" size="lg" className="w-full sm:w-auto" asChild>
-            <Link to="/collections">Continue Shopping</Link>
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
+  const { state, totalPrice, shippingCost, grandTotal } = useCart();
 
   if (state.items.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center py-12 sm:py-24 px-4">
         <div className="text-center w-full">
-          <h1 className="font-serif text-2xl sm:text-3xl mb-4">Your Bag is Empty</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl mb-4">Your Cart is Empty</h1>
           <Button variant="luxuryOutline" className="w-full sm:w-auto" asChild>
             <Link to="/collections">Browse Collections</Link>
           </Button>
@@ -102,7 +46,7 @@ const Checkout = () => {
           >
             <h1 className="font-serif text-2xl sm:text-3xl mb-6 sm:mb-8">Checkout</h1>
 
-            <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+            <form onSubmit={(event) => event.preventDefault()} className="space-y-6 sm:space-y-8">
               {/* Contact */}
               <div className="bg-background p-4 sm:p-6 rounded-sm">
                 <h2 className="font-serif text-lg sm:text-xl mb-3 sm:mb-4">Contact Information</h2>
@@ -194,59 +138,18 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Payment */}
-              <div className="bg-background p-4 sm:p-6 rounded-sm">
-                <h2 className="font-serif text-lg sm:text-xl mb-3 sm:mb-4">Payment</h2>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="cardNumber">Card Number</Label>
-                    <Input
-                      id="cardNumber"
-                      required
-                      placeholder="1234 5678 9012 3456"
-                      className="mt-1 text-base"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="expiry">Expiry Date</Label>
-                      <Input
-                        id="expiry"
-                        required
-                        placeholder="MM/YY"
-                        className="mt-1 text-base"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cvc">CVC</Label>
-                      <Input
-                        id="cvc"
-                        required
-                        placeholder="123"
-                        className="mt-1 text-base"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <Button
-                type="submit"
+                type="button"
                 variant="luxury"
                 size="lg"
                 className="sm:size-xl w-full"
-                disabled={isProcessing}
+                disabled
               >
-                {isProcessing ? (
-                  "Processing..."
-                ) : (
-                  <>
-                    <Lock className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Place Order — </span>
-                    {formatPrice(totalPrice)}
-                  </>
-                )}
+                {t("cart.orderPlacementUnavailable")}
               </Button>
+              <p className="text-muted-foreground text-sm text-center">
+                {t("cart.checkoutUnavailableDescription")}
+              </p>
             </form>
           </motion.div>
 
@@ -287,14 +190,16 @@ const Checkout = () => {
                 </div>
                 <div className="flex justify-between text-sm sm:text-base">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="text-primary">Complimentary</span>
+                  <span className={shippingCost === 0 ? "text-primary" : "text-foreground"}>
+                    {shippingCost === 0 ? "Complimentary" : formatPrice(shippingCost)}
+                  </span>
                 </div>
               </div>
 
               <div className="flex justify-between py-4 sm:py-6 text-base sm:text-lg">
                 <span className="font-medium">Total</span>
                 <span className="font-serif text-lg sm:text-xl">
-                  {formatPrice(totalPrice)}
+                  {formatPrice(grandTotal)}
                 </span>
               </div>
             </div>
