@@ -1,4 +1,6 @@
-import { X, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useState } from "react";
+import { CartApiError } from "@/api/cart";
+import { X, LoaderCircle, Minus, Plus, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -6,11 +8,53 @@ import { useCart } from "@/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { getLang } from "@/lib/get-lang.ts";
 import { formatPrice } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { categories } from "@/lib/products";
 
 export const CartDrawer = () => {
-  const { i18n } = useTranslation();
+  type PendingAction = { productId: string; action: "decrease" | "increase" | "remove" };
+  const { i18n, t } = useTranslation();
   const lang = getLang(i18n.language);
-  const { state, dispatch, totalItems, totalPrice } = useCart();
+  const { state, closeCart, removeItem, updateQuantity, totalItems, totalPrice, shippingCost, grandTotal, isLoading, hasError, isUpdating } = useCart();
+  const { toast } = useToast();
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+
+  const changeQuantity = async (productId: string, quantity: number, action: "decrease" | "increase") => {
+    setPendingAction({ productId, action });
+    try {
+      await updateQuantity(productId, quantity);
+      if (quantity <= 0) {
+        toast({ title: t("cart.removedTitle"), description: t("cart.removedDescription") });
+      } else {
+        toast({
+          title: t(action === "increase" ? "cart.quantityIncreasedTitle" : "cart.quantityDecreasedTitle"),
+          description: t(action === "increase" ? "cart.quantityIncreasedDescription" : "cart.quantityDecreasedDescription"),
+        });
+      }
+    } catch (error) {
+      toast({
+        title: t("cart.errorTitle"),
+        description: t(error instanceof CartApiError && error.code === "insufficient_stock"
+          ? "cart.stockExceeded"
+          : "cart.updateFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleRemove = async (productId: string) => {
+    setPendingAction({ productId, action: "remove" });
+    try {
+      await removeItem(productId);
+      toast({ title: t("cart.removedTitle"), description: t("cart.removedDescription") });
+    } catch {
+      toast({ title: t("cart.errorTitle"), description: t("cart.removeFailed"), variant: "destructive" });
+    } finally {
+      setPendingAction(null);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -22,7 +66,7 @@ export const CartDrawer = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-foreground/50 z-50"
-            onClick={() => dispatch({ type: "CLOSE_CART" })}
+            onClick={closeCart}
           />
 
           {/* Drawer */}
@@ -37,13 +81,13 @@ export const CartDrawer = () => {
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border">
               <div className="flex items-center gap-2 sm:gap-3">
                 <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
-                <h2 className="font-serif text-lg sm:text-xl">Your Bag</h2>
+                <h2 className="font-serif text-lg sm:text-xl">{t("cart.title")}</h2>
                 <span className="text-muted-foreground text-sm">({totalItems})</span>
               </div>
               <button
-                onClick={() => dispatch({ type: "CLOSE_CART" })}
+                onClick={closeCart}
                 className="p-2 hover:bg-muted rounded-sm transition-colors"
-                aria-label="Close cart"
+                aria-label={t("cart.closeCart")}
               >
                 <X className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
@@ -51,78 +95,81 @@ export const CartDrawer = () => {
 
             {/* Items */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              {state.items.length === 0 ? (
+              {isLoading ? (
+                <p className="text-center text-muted-foreground">{t("cart.loading")}</p>
+              ) : hasError ? (
+                <p className="text-center text-muted-foreground">{t("cart.loadFailed")}</p>
+              ) : state.items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
                   <ShoppingBag className="h-12 w-12 sm:h-16 sm:w-16 text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground text-sm sm:text-base">Your bag is empty</p>
+                  <p className="text-muted-foreground text-sm sm:text-base">{t("cart.empty")}</p>
                   <Button
                     variant="luxuryOutline"
                     size="lg"
                     className="mt-6 w-full sm:w-auto"
-                    onClick={() => dispatch({ type: "CLOSE_CART" })}
+                    onClick={closeCart}
                     asChild
                   >
-                    <Link to="/collections">Explore Collections</Link>
+                    <Link to="/collections">{t("cart.exploreCollections")}</Link>
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-4 sm:space-y-6">
                   {state.items.map((item) => (
                     <div
-                      key={item.product.id}
+                      key={item.productId}
                       className="flex gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-border last:border-0"
                     >
                       <img
                         src={item.product.image}
-                        alt={item.product.id}
+                        alt={item.product.name[lang]}
                         className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-sm flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-serif text-base sm:text-lg break-words">{item.product.name[lang]}</h3>
                         <p className="text-muted-foreground text-xs sm:text-sm capitalize">
-                          {item.product.category}
+                          {categories[item.product.category].name[lang]}
                         </p>
                         <p className="font-medium mt-1 text-sm sm:text-base">
                           {formatPrice(item.product.price)}
                         </p>
                         <div className="flex items-center gap-2 sm:gap-3 mt-3">
                           <button
-                            onClick={() =>
-                              dispatch({
-                                type: "UPDATE_QUANTITY",
-                                productId: item.product.id,
-                                quantity: item.quantity - 1,
-                              })
-                            }
+                            disabled={isUpdating}
+                            onClick={() => changeQuantity(item.productId, item.quantity - 1, "decrease")}
                             className="p-1 hover:bg-muted rounded-sm transition-colors"
-                            aria-label="Decrease quantity"
+                            aria-label={t("cart.decreaseQuantity")}
                           >
-                            <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+                            {pendingAction?.productId === item.productId && pendingAction.action === "decrease" ? (
+                              <LoaderCircle className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                            ) : (
+                              <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
+                            )}
                           </button>
                           <span className="w-6 sm:w-8 text-center text-sm sm:text-base">{item.quantity}</span>
                           <button
-                            onClick={() =>
-                              dispatch({
-                                type: "UPDATE_QUANTITY",
-                                productId: item.product.id,
-                                quantity: item.quantity + 1,
-                              })
-                            }
+                            disabled={isUpdating}
+                            onClick={() => changeQuantity(item.productId, item.quantity + 1, "increase")}
                             className="p-1 hover:bg-muted rounded-sm transition-colors"
-                            aria-label="Increase quantity"
+                            aria-label={t("cart.increaseQuantity")}
                           >
-                            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                            {pendingAction?.productId === item.productId && pendingAction.action === "increase" ? (
+                              <LoaderCircle className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                            ) : (
+                              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                            )}
                           </button>
                           <button
-                            onClick={() =>
-                              dispatch({
-                                type: "REMOVE_ITEM",
-                                productId: item.product.id,
-                              })
-                            }
+                            disabled={isUpdating}
+                            onClick={() => handleRemove(item.productId)}
                             className="ml-auto text-muted-foreground hover:text-destructive text-xs sm:text-sm transition-colors"
+                            aria-label={t("cart.removeItem")}
                           >
-                            Remove
+                            {pendingAction?.productId === item.productId && pendingAction.action === "remove" ? (
+                              <LoaderCircle className="h-4 w-4 animate-spin" />
+                            ) : (
+                              t("cart.remove")
+                            )}
                           </button>
                         </div>
                       </div>
@@ -135,21 +182,31 @@ export const CartDrawer = () => {
             {/* Footer */}
             {state.items.length > 0 && (
               <div className="p-4 sm:p-6 border-t border-border space-y-3 sm:space-y-4">
-                <div className="flex justify-between text-base sm:text-lg">
-                  <span>Subtotal</span>
+                <div className="flex justify-between text-sm sm:text-base">
+                  <span className="text-muted-foreground">{t("cart.subtotal")}</span>
                   <span className="font-serif">{formatPrice(totalPrice)}</span>
                 </div>
-                <p className="text-muted-foreground text-xs sm:text-sm">
-                  Shipping and taxes calculated at checkout
-                </p>
+                <div className="flex justify-between text-sm sm:text-base">
+                  <span className="text-muted-foreground">{t("cart.shipping")}</span>
+                  <span className={shippingCost === 0 ? "text-primary" : "text-foreground"}>
+                    {shippingCost === 0 ? t("cart.complimentary") : formatPrice(shippingCost)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-border pt-3 text-base sm:text-lg">
+                  <span className="font-medium">{t("cart.total")}</span>
+                  <span className="font-serif">{formatPrice(grandTotal)}</span>
+                </div>
                 <Button
                   variant="luxury"
                   size="lg"
                   className="sm:size-xl w-full"
-                  onClick={() => dispatch({ type: "CLOSE_CART" })}
+                  onClick={closeCart}
                   asChild
                 >
-                  <Link to="/checkout">Proceed to Checkout</Link>
+                  <Link to="/checkout">{t("cart.proceedToCheckout")}</Link>
+                </Button>
+                <Button variant="luxuryOutline" className="w-full" onClick={closeCart} asChild>
+                  <Link to="/cart">{t("cart.viewCart")}</Link>
                 </Button>
               </div>
             )}

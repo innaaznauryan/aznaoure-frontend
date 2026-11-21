@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Phone, Mail, Facebook, Instagram } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,16 @@ import { useToast } from "@/hooks/use-toast";
 const Contact = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const preorderProductId = searchParams.get("preorder");
+  const preorderProductName = searchParams.get("productName") || preorderProductId || "";
+  const preorderMessage = preorderProductId
+    ? t("contact.preorderMessage", {
+        productName: preorderProductName,
+        productId: preorderProductId,
+      })
+    : "";
 
   const showSuccess = () => {
     toast({
@@ -36,10 +45,9 @@ const Contact = () => {
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    formData.append(
-      "_subject",
-      `New message from ${form.firstName.value} ${form.lastName.value} on Aznaoure website`
-    );
+    formData.append("_subject", preorderProductId
+      ? t("contact.preorderSubject", { productName: preorderProductName })
+      : `New message from ${form.firstName.value} ${form.lastName.value} on Aznaoure website`);
 
     try {
       const response = await fetch(import.meta.env.VITE_FORMSPREE_ENDPOINT,
@@ -233,6 +241,7 @@ const Contact = () => {
                     placeholder={t("contact.message.placeholder")}
                     rows={6}
                     className="mt-2 resize-none"
+                    defaultValue={preorderMessage}
                   />
                 </div>
 
