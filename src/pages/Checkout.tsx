@@ -2,17 +2,28 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { getLang } from "@/lib/get-lang.ts";
 import { formatPrice } from "@/lib/utils";
 
 const Checkout = () => {
   const { i18n, t } = useTranslation();
   const lang = getLang(i18n.language);
-  const { state, totalPrice, shippingCost, grandTotal } = useCart();
+  const { state, totalPrice, shippingCost, grandTotal, isLoading } = useCart();
+  const { isLoading: isAuthLoading } = useAuth();
+
+  if (isAuthLoading || isLoading) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <Spinner />
+      </div>
+    );
+  }
 
   if (state.items.length === 0) {
     return (
