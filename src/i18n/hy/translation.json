@@ -176,7 +176,26 @@
     "orderSummary": "Պատվերի ամփոփում",
     "secureCheckout": "Ապահով վճարում՝ 256-բիթանոց SSL կոդավորմամբ",
     "orderPlacementUnavailable": "Պատվերի ձևակերպումը դեռ հասանելի չէ",
-    "checkoutUnavailableDescription": "Պատվերի ձևակերպումը հասանելի կլինի վճարումների համակարգը միացնելուց հետո։"
+    "checkoutUnavailableDescription": "Պատվերի ձևակերպումը շուտով հասանելի կլինի։"
+  },
+  "checkout": {
+    "title": "Պատվերի ձևակերպում",
+    "emptyCart": "Ձեր զամբյուղը դատարկ է",
+    "browseCollections": "Դիտել հավաքածուները",
+    "backToCart": "Վերադառնալ զամբյուղ",
+    "contactInformation": "Կոնտակտային տվյալներ",
+    "email": "Էլ․ փոստ",
+    "phone": "Հեռախոս",
+    "phonePlaceholder": "+374 00 000 000",
+    "shippingAddress": "Առաքման հասցե",
+    "firstName": "Անուն",
+    "lastName": "Ազգանուն",
+    "address": "Հասցե",
+    "streetAddress": "Փողոց, շենք, բնակարան",
+    "city": "Քաղաք",
+    "zipCode": "Փոստային ինդեքս",
+    "country": "Երկիր",
+    "quantity": "Քանակը՝ {{count}}"
   },
   "profile": {
     "nav": {

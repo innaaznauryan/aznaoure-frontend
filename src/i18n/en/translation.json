@@ -176,7 +176,26 @@
     "orderSummary": "Order Summary",
     "secureCheckout": "Secure checkout with 256-bit SSL encryption",
     "orderPlacementUnavailable": "Order placement is not available yet",
-    "checkoutUnavailableDescription": "Checkout will be available when order processing is connected."
+    "checkoutUnavailableDescription": "Checkout will soon be available."
+  },
+  "checkout": {
+    "title": "Checkout",
+    "emptyCart": "Your Cart is Empty",
+    "browseCollections": "Browse Collections",
+    "backToCart": "Back to Cart",
+    "contactInformation": "Contact Information",
+    "email": "Email",
+    "phone": "Phone",
+    "phonePlaceholder": "+374 00 000 000",
+    "shippingAddress": "Shipping Address",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "address": "Address",
+    "streetAddress": "Street address",
+    "city": "City",
+    "zipCode": "ZIP Code",
+    "country": "Country",
+    "quantity": "Quantity: {{count}}"
   },
   "profile": {
     "nav": {
