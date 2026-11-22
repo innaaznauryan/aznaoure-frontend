@@ -1,106 +1,105 @@
-import React, { createContext, useContext, useReducer, useMemo, ReactNode } from "react";
-import { Product } from "@/lib/products";
+import { createContext, useContext, useState, ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { addCartItem, CartItem, fetchCart, removeCartItem, updateCartItem } from "@/api/cart";
+import { useAuth } from "@/context/AuthContext";
 
-export interface CartItem {
-  product: Product;
-  quantity: number;
-}
-
-interface CartState {
-  items: CartItem[];
-  isOpen: boolean;
-}
-
-type CartAction =
-  | { type: "ADD_ITEM"; product: Product }
-  | { type: "REMOVE_ITEM"; productId: string }
-  | { type: "UPDATE_QUANTITY"; productId: string; quantity: number }
-  | { type: "CLEAR_CART" }
-  | { type: "TOGGLE_CART" }
-  | { type: "CLOSE_CART" };
-
-const CartContext = createContext<{
-  state: CartState;
-  dispatch: React.Dispatch<CartAction>;
+interface CartContextValue {
+  state: { items: CartItem[]; isOpen: boolean };
   totalItems: number;
   totalPrice: number;
-} | null>(null);
+  shippingCost: number;
+  grandTotal: number;
+  isLoading: boolean;
+  hasError: boolean;
+  isUpdating: boolean;
+  refetchCart: () => Promise<void>;
+  toggleCart: () => void;
+  closeCart: () => void;
+  addItem: (productId: string, quantity?: number) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
+}
 
-const cartReducer = (state: CartState, action: CartAction): CartState => {
-  switch (action.type) {
-    case "ADD_ITEM": {
-      const existingItem = state.items.find(
-        (item) => item.product.id === action.product.id
-      );
-      if (existingItem) {
-        return {
-          ...state,
-          items: state.items.map((item) =>
-            item.product.id === action.product.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          ),
-        };
-      }
-      return {
-        ...state,
-        items: [...state.items, { product: action.product, quantity: 1 }],
-      };
-    }
-    case "REMOVE_ITEM":
-      return {
-        ...state,
-        items: state.items.filter((item) => item.product.id !== action.productId),
-      };
-    case "UPDATE_QUANTITY":
-      if (action.quantity <= 0) {
-        return {
-          ...state,
-          items: state.items.filter(
-            (item) => item.product.id !== action.productId
-          ),
-        };
-      }
-      return {
-        ...state,
-        items: state.items.map((item) =>
-          item.product.id === action.productId
-            ? { ...item, quantity: action.quantity }
-            : item
-        ),
-      };
-    case "CLEAR_CART":
-      return { ...state, items: [] };
-    case "TOGGLE_CART":
-      return { ...state, isOpen: !state.isOpen };
-    case "CLOSE_CART":
-      return { ...state, isOpen: false };
-    default:
-      return state;
-  }
-};
+const CartContext = createContext<CartContextValue | null>(null);
+
+const FREE_SHIPPING_THRESHOLD = 25_000;
+const STANDARD_SHIPPING_COST = 1_000;
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(cartReducer, {
-    items: [],
-    isOpen: false,
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const [isOpen, setIsOpen] = useState(false);
+  const queryKey = ["cart", user?.id];
+
+  const cartQuery = useQuery({
+    queryKey,
+    queryFn: fetchCart,
+    enabled: Boolean(user) && !isAuthLoading,
   });
 
-  const totalItems = useMemo(
-    () => state.items.reduce((sum, item) => sum + item.quantity, 0),
-    [state.items]
-  );
+  const invalidateCart = () => queryClient.invalidateQueries({ queryKey });
+  const addMutation = useMutation({
+    mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
+      addCartItem(productId, quantity),
+    onSuccess: invalidateCart,
+  });
+  const updateMutation = useMutation({
+    mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
+      updateCartItem(productId, quantity),
+    onSuccess: invalidateCart,
+  });
+  const removeMutation = useMutation({
+    mutationFn: removeCartItem,
+    onSuccess: invalidateCart,
+  });
 
-  const totalPrice = useMemo(
-    () => state.items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
-      0
-    ),
-    [state.items]
+  const items = user ? cartQuery.data ?? [] : [];
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
   );
+  const shippingCost = totalPrice > FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST;
+  const grandTotal = totalPrice + shippingCost;
+
+  const addItem = async (productId: string, quantity = 1) => {
+    if (!user) throw new Error("Sign in to add items to your cart");
+    await addMutation.mutateAsync({ productId, quantity });
+  };
+
+  const updateQuantity = async (productId: string, quantity: number) => {
+    if (!user) throw new Error("Sign in to manage your cart");
+    if (quantity <= 0) {
+      await removeMutation.mutateAsync(productId);
+      return;
+    }
+    await updateMutation.mutateAsync({ productId, quantity });
+  };
+
+  const removeItem = async (productId: string) => {
+    if (!user) throw new Error("Sign in to manage your cart");
+    await removeMutation.mutateAsync(productId);
+  };
 
   return (
-    <CartContext.Provider value={{ state, dispatch, totalItems, totalPrice }}>
+    <CartContext.Provider
+      value={{
+        state: { items, isOpen },
+        totalItems,
+        totalPrice,
+        shippingCost,
+        grandTotal,
+        isLoading: Boolean(user) && cartQuery.isLoading,
+        hasError: Boolean(user) && cartQuery.isError,
+        isUpdating: addMutation.isPending || updateMutation.isPending || removeMutation.isPending,
+        refetchCart: async () => { await cartQuery.refetch(); },
+        toggleCart: () => setIsOpen((open) => !open),
+        closeCart: () => setIsOpen(false),
+        addItem,
+        removeItem,
+        updateQuantity,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

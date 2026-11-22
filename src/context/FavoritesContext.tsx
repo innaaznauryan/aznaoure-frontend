@@ -6,7 +6,8 @@ interface FavoritesContextValue {
   isFavorite: (id: string) => boolean;
   toggleFavorite: (id: string) => void;
   loading: boolean;
-  showSignInPrompt: boolean;
+  signInPromptReason: "favorites" | "cart" | null;
+  promptSignIn: (reason: "favorites" | "cart") => void;
   closeSignInPrompt: () => void;
 }
 
@@ -16,7 +17,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+  const [signInPromptReason, setSignInPromptReason] = useState<"favorites" | "cart" | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -31,12 +32,16 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
 
   const isFavorite = useCallback((id: string) => favoriteIds.has(id), [favoriteIds]);
 
-  const closeSignInPrompt = useCallback(() => setShowSignInPrompt(false), []);
+  const promptSignIn = useCallback((reason: "favorites" | "cart") => {
+    setSignInPromptReason(reason);
+  }, []);
+
+  const closeSignInPrompt = useCallback(() => setSignInPromptReason(null), []);
 
   const toggleFavorite = useCallback(
     async (id: string) => {
       if (!user) {
-        setShowSignInPrompt(true);
+        promptSignIn("favorites");
         return;
       }
 
@@ -70,12 +75,12 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     },
-    [favoriteIds, user]
+    [favoriteIds, promptSignIn, user]
   );
 
   return (
     <FavoritesContext.Provider
-      value={{ isFavorite, toggleFavorite, loading, showSignInPrompt, closeSignInPrompt }}
+      value={{ isFavorite, toggleFavorite, loading, signInPromptReason, promptSignIn, closeSignInPrompt }}
     >
       {children}
     </FavoritesContext.Provider>

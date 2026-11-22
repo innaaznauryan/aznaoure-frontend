@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -12,22 +12,25 @@ import { Button } from "@/components/ui/button.tsx";
 import { useFavorites } from "@/context/FavoritesContext";
 
 export const SignInPromptModal = () => {
-  const { showSignInPrompt, closeSignInPrompt } = useFavorites();
+  const { signInPromptReason, closeSignInPrompt } = useFavorites();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
 
   const handleSignIn = () => {
     closeSignInPrompt();
-    navigate("/signin");
+    navigate("/signin", { state: { from: location } });
   };
 
   return (
-    <Dialog open={showSignInPrompt} onOpenChange={(open) => !open && closeSignInPrompt()}>
+    <Dialog open={signInPromptReason !== null} onOpenChange={(open) => !open && closeSignInPrompt()}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{t("favorites.save")}</DialogTitle>
+          <DialogTitle>
+            {t(signInPromptReason === "cart" ? "cart.signIn" : "favorites.signIn")}
+          </DialogTitle>
           <DialogDescription>
-            {t("favorites.description")}
+            {t(signInPromptReason === "cart" ? "cart.signInDescription" : "favorites.description")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-2">

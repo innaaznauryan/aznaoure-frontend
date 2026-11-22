@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Product, categories } from "@/lib/products";
 import { getLang } from "@/lib/get-lang.ts";
 import { formatPrice } from "@/lib/utils";
+import { AddToCartButton } from "@/components/products/AddToCartButton";
 
 interface ProductCardProps {
   product: Product;
@@ -29,32 +30,37 @@ export const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
       viewport={{ once: true }}
       className="group"
     >
-      <Link to={`/product/${product.id}${location.search}`} className="block">
-        <div className="relative overflow-hidden bg-muted aspect-square mb-4">
+      <div className="relative overflow-hidden bg-muted aspect-square mb-4">
+        <Link to={`/product/${product.id}${location.search}`} className="block h-full">
           <img
             src={product.image}
             alt={product.id}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/5 transition-colors duration-300" />
+        </Link>
+        <div className="absolute top-0 right-0 p-2 flex gap-2">
           <Button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleFavorite(product.id);
-            }}
-            className="absolute top-3 right-3 z-10 p-2 rounded-full aspect-square bg-background/80 transition-colors"
-            aria-label="Toggle favorite"
+            type="button"
+            variant="luxuryOutline"
+            onClick={() => toggleFavorite(product.id)}
+            className="z-10 h-10 w-10 p-2 rounded-full aspect-square bg-background/80 text-black hover:bg-gold hover:text-white transition-colors"
+            aria-label={t("favorites.save")}
+            title={t("favorites.save")}
           >
             <Heart className={`h-4 w-4 ${isFavorite(product.id) ? "fill-rose-500" : ""}`} />
           </Button>
-          {!inStock && (
-            <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-background/80 text-xs font-medium tracking-wide uppercase">
-              {t("products.outOfStock")}
-            </div>
-          )}
+          <AddToCartButton
+            product={product}
+            className="z-10 h-10 w-10 min-w-10 p-2 rounded-full aspect-square bg-background/80 text-black hover:bg-gold hover:text-white transition-colors"
+          />
         </div>
-      </Link>
+        {!inStock && (
+          <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-background/80 text-xs font-medium tracking-wide uppercase">
+            {t("products.outOfStock")}
+          </div>
+        )}
+      </div>
       
       <div className="space-y-2">
         <p className="text-xs font-sans tracking-widest uppercase text-muted-foreground">
