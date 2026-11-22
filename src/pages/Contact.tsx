@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 const Contact = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const showSuccess = () => {
@@ -176,7 +178,11 @@ const Contact = () => {
                 {t("contact.sendMessage")}
               </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              <form
+                key={user?.id ?? "guest"}
+                onSubmit={handleSubmit}
+                className="space-y-4 sm:space-y-6"
+              >
                 <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <Label htmlFor="firstName">{t("contact.fName.label")}</Label>
@@ -184,6 +190,7 @@ const Contact = () => {
                       id="firstName"
                       name="firstName"
                       required
+                      defaultValue={user?.first_name ?? ""}
                       placeholder={t("contact.fName.placeholder")}
                       className="mt-2"
                     />
@@ -194,6 +201,7 @@ const Contact = () => {
                       id="lastName"
                       name="lastName"
                       required
+                      defaultValue={user?.last_name ?? ""}
                       placeholder={t("contact.lName.placeholder")}
                       className="mt-2"
                     />
@@ -207,6 +215,7 @@ const Contact = () => {
                     name="email"
                     type="email"
                     required
+                    defaultValue={user?.email ?? ""}
                     placeholder={t("contact.email.placeholder")}
                     className="mt-2"
                   />
@@ -219,6 +228,7 @@ const Contact = () => {
                     name="phone"
                     type="tel"
                     required
+                    defaultValue={user?.phone ?? ""}
                     placeholder="(+374) 00 000 000"
                     className="mt-2"
                   />
