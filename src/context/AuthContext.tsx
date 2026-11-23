@@ -9,10 +9,15 @@ interface User {
   phone: string
 }
 
+type SignInPromptReason = "favorites" | "cart";
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  signInPromptReason: SignInPromptReason | null;
+  promptSignIn: (reason: SignInPromptReason) => void;
+  closeSignInPrompt: () => void;
   login: (token: string, refreshToken: string, user: User) => void;
   logout: () => void;
   updateUser: (user: User) => void;
@@ -25,6 +30,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [signInPromptReason, setSignInPromptReason] = useState<SignInPromptReason | null>(null);
+
+  const promptSignIn = (reason: SignInPromptReason) => setSignInPromptReason(reason);
+  const closeSignInPrompt = () => setSignInPromptReason(null);
 
   useEffect(() => {
     loadSession();
@@ -87,6 +96,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       token,
       isAuthenticated: !!token,
+      signInPromptReason,
+      promptSignIn,
+      closeSignInPrompt,
       login,
       logout,
       updateUser,
