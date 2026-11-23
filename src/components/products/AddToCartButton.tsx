@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
-import { useFavorites } from "@/context/FavoritesContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Product } from "@/lib/products";
 
@@ -24,9 +23,8 @@ export const AddToCartButton = ({
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, promptSignIn } = useAuth();
   const { toast } = useToast();
-  const { promptSignIn } = useFavorites();
   const [isAdding, setIsAdding] = useState(false);
   const { addItem, state } = useCart();
   const isInCart = state.items.some((item) => item.productId === product.id);

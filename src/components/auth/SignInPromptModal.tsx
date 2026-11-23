@@ -9,10 +9,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button.tsx";
-import { useFavorites } from "@/context/FavoritesContext";
+import { useAuth } from "@/context/AuthContext";
 
 export const SignInPromptModal = () => {
-  const { signInPromptReason, closeSignInPrompt } = useFavorites();
+  const { signInPromptReason, closeSignInPrompt } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
