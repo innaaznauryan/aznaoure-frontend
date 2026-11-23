@@ -26,7 +26,7 @@ export function useGoogleAuth(from = "/") {
     try {
       const data = await googleAuth(credential);
 
-      setAuth(data.access_token, data.user);
+      setAuth(data.access_token, data.refresh_token, data.user);
       navigate(from, { replace: true });
     } catch (err) {
       const code =
