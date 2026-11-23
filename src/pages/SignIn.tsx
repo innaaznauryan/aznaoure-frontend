@@ -50,7 +50,7 @@ export default function SignIn() {
     setIsSubmitting(true);
     try {
       const result = await login({ email: data.email, password: data.password });
-      setAuth(result.access_token, result.user);
+      setAuth(result.access_token, result.refresh_token, result.user);
       navigate(from, { replace: true });
     } catch (err) {
       const code = err instanceof ApiError ? err.code : 'network_error';

@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
+  login: (token: string, refreshToken: string, user: User) => void;
   logout: () => void;
   updateUser: (user: User) => void;
   isLoading: boolean;
@@ -30,6 +30,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loadSession();
   }, []);
 
+  useEffect(() => {
+    const handleTokenUpdate = (event: Event) => {
+      setToken((event as CustomEvent<string | null>).detail);
+    };
+    window.addEventListener('aznaoure:auth-token', handleTokenUpdate);
+    return () => window.removeEventListener('aznaoure:auth-token', handleTokenUpdate);
+  }, []);
+
   async function loadSession() {
     const storedToken = localStorage.getItem('aznaoure_token');
     if (!storedToken) {
@@ -44,6 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(currentUser);
     } catch {
       localStorage.removeItem('aznaoure_token');
+      localStorage.removeItem('aznaoure_refresh_token');
       setToken(null);
       setUser(null);
     } finally {
@@ -51,14 +60,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const login = (newToken: string, newUser: User) => {
+  const login = (newToken: string, refreshToken: string, newUser: User) => {
     localStorage.setItem('aznaoure_token', newToken);
+    if (refreshToken) {
+      localStorage.setItem('aznaoure_refresh_token', refreshToken);
+    } else {
+      localStorage.removeItem('aznaoure_refresh_token');
+    }
     setToken(newToken);
     setUser(newUser);
   };
 
   const logout = () => {
     localStorage.removeItem('aznaoure_token');
+    localStorage.removeItem('aznaoure_refresh_token');
     setToken(null);
     setUser(null);
   };

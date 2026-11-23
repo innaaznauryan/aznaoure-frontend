@@ -56,7 +56,7 @@ export default function SignUp() {
         last_name: data.lastName,
         phone: data.phone,
       });
-      setAuth(result.access_token, result.user);
+      setAuth(result.access_token, result.refresh_token, result.user);
       navigate('/', { replace: true });
     } catch (err) {
       const code = err instanceof ApiError ? err.code : 'network_error';
