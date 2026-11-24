@@ -107,7 +107,7 @@
       "placeholder": "Tell us more about your inquiry..."
     },
     "preorderSubject": "Preorder inquiry for {{productName}}",
-    "preorderMessage": "I am interested in preordering {{productName}} (product ID: {{productId}}). Please let me know about availability and timing.",
+    "preorderMessage": "I am interested in preordering {{productName}}. Please let me know about availability and timing.",
     "sending": "Sending...",
     "send": "Send Message",
     "success": {
@@ -174,7 +174,6 @@
     "total": "Total",
     "proceedToCheckout": "Proceed to Checkout",
     "orderSummary": "Order Summary",
-    "secureCheckout": "Secure checkout with 256-bit SSL encryption",
     "orderPlacementUnavailable": "Order placement is not available yet",
     "checkoutUnavailableDescription": "Checkout will soon be available."
   },

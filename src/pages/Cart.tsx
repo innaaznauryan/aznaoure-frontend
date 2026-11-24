@@ -235,10 +235,6 @@ const Cart = () => {
                   <Button variant="luxury" size="lg" className="sm:size-xl w-full" asChild>
                     <Link to="/checkout">{t("cart.proceedToCheckout")}</Link>
                   </Button>
-
-                  <p className="text-muted-foreground text-xs sm:text-sm text-center mt-4 sm:mt-6">
-                    {t("cart.secureCheckout")}
-                  </p>
                 </div>
               </motion.div>
             </div>
