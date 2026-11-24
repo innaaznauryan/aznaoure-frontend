@@ -201,6 +201,7 @@ const Contact = () => {
                       defaultValue={user?.first_name ?? ""}
                       placeholder={t("contact.fName.placeholder")}
                       className="mt-2"
+                      autoFocus
                     />
                   </div>
                   <div>
