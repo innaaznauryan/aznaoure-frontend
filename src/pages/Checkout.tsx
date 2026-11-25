@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -6,18 +7,101 @@ import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useAddresses } from "@/hooks/use-addresses";
 import { getLang } from "@/lib/get-lang.ts";
 import { formatPrice } from "@/lib/utils";
+
+interface CheckoutFormValues {
+  email: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  zip: string;
+  country: string;
+}
 
 const Checkout = () => {
   const { i18n, t } = useTranslation();
   const lang = getLang(i18n.language);
   const { state, totalPrice, shippingCost, grandTotal, isLoading } = useCart();
-  const { isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const { addresses, loading: areAddressesLoading } = useAddresses();
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [formValues, setFormValues] = useState<CheckoutFormValues>({
+    email: "",
+    phone: "",
+    firstName: "",
+    lastName: "",
+    address: "",
+    city: "",
+    zip: "",
+    country: "",
+  });
 
-  if (isAuthLoading || isLoading) {
+  useEffect(() => {
+    if (!user) return;
+    setFormValues((current) => ({
+      ...current,
+      email: user.email,
+      phone: user.phone ?? "",
+      firstName: user.first_name,
+      lastName: user.last_name,
+    }));
+  }, [user]);
+
+  const handleAddressChange = (addressId: string) => {
+    if (addressId === "manual") {
+      setSelectedAddressId(addressId);
+      setFormValues((current) => ({
+        ...current,
+        phone: user?.phone ?? "",
+        address: "",
+        city: "",
+        zip: "",
+        country: "",
+      }));
+      return;
+    }
+
+    const selectedAddress = addresses.find((address) => String(address.id) === addressId);
+    if (!selectedAddress) return;
+
+    setSelectedAddressId(addressId);
+    setFormValues((current) => ({
+      ...current,
+      phone: selectedAddress.phone ?? user?.phone ?? current.phone,
+      address: selectedAddress.address,
+      city: selectedAddress.city,
+      zip: selectedAddress.zip_code,
+      country: selectedAddress.country,
+    }));
+  };
+
+  const updateFormField = (field: keyof CheckoutFormValues, value: string) => {
+    setFormValues((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateAddressField = (
+    field: "address" | "city" | "zip" | "country",
+    value: string
+  ) => {
+    setSelectedAddressId("manual");
+    updateFormField(field, value);
+  };
+
+  if (isAuthLoading || isLoading || areAddressesLoading) {
     return (
       <div className="flex justify-center items-center py-16">
         <Spinner />
@@ -62,6 +146,30 @@ const Checkout = () => {
               <div className="bg-background p-4 sm:p-6 rounded-sm">
                 <h2 className="font-serif text-lg sm:text-xl mb-3 sm:mb-4">{t("checkout.contactInformation")}</h2>
                 <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">{t("checkout.firstName")}</Label>
+                      <Input
+                        id="firstName"
+                        required
+                        placeholder={t("checkout.firstName")}
+                        value={formValues.firstName}
+                        onChange={(event) => updateFormField("firstName", event.target.value)}
+                        className="mt-1 text-base"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">{t("checkout.lastName")}</Label>
+                      <Input
+                        id="lastName"
+                        required
+                        placeholder={t("checkout.lastName")}
+                        value={formValues.lastName}
+                        onChange={(event) => updateFormField("lastName", event.target.value)}
+                        className="mt-1 text-base"
+                      />
+                    </div>
+                  </div>
                   <div>
                     <Label htmlFor="email">{t("checkout.email")}</Label>
                     <Input
@@ -69,6 +177,8 @@ const Checkout = () => {
                       type="email"
                       required
                       placeholder="your@email.com"
+                      value={formValues.email}
+                      onChange={(event) => updateFormField("email", event.target.value)}
                       className="mt-1 text-base"
                     />
                   </div>
@@ -77,7 +187,10 @@ const Checkout = () => {
                     <Input
                       id="phone"
                       type="tel"
+                      required
                       placeholder={t("checkout.phonePlaceholder")}
+                      value={formValues.phone}
+                      onChange={(event) => updateFormField("phone", event.target.value)}
                       className="mt-1 text-base"
                     />
                   </div>
@@ -88,32 +201,34 @@ const Checkout = () => {
               <div className="bg-background p-4 sm:p-6 rounded-sm">
                 <h2 className="font-serif text-lg sm:text-xl mb-3 sm:mb-4">{t("checkout.shippingAddress")}</h2>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {addresses.length > 0 && (
                     <div>
-                      <Label htmlFor="firstName">{t("checkout.firstName")}</Label>
-                      <Input
-                        id="firstName"
-                        required
-                        placeholder={t("checkout.firstName")}
-                        className="mt-1 text-base"
-                      />
+                      <Label htmlFor="saved-address">{t("checkout.selectSavedAddress")}</Label>
+                      <Select value={selectedAddressId} onValueChange={handleAddressChange}>
+                        <SelectTrigger id="saved-address" className="mt-1 text-base">
+                          <SelectValue placeholder={t("checkout.selectSavedAddress")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {addresses.map((savedAddress) => (
+                            <SelectItem key={savedAddress.id} value={String(savedAddress.id)}>
+                              {savedAddress.address}, {savedAddress.city}
+                              {savedAddress.is_default ? ` (${t("address.list.default")})` : ""}
+                            </SelectItem>
+                          ))}
+                          <SelectSeparator />
+                          <SelectItem value="manual">{t("checkout.enterAddressManually")}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="lastName">{t("checkout.lastName")}</Label>
-                      <Input
-                        id="lastName"
-                        required
-                        placeholder={t("checkout.lastName")}
-                        className="mt-1 text-base"
-                      />
-                    </div>
-                  </div>
+                  )}
                   <div>
                     <Label htmlFor="address">{t("checkout.address")}</Label>
                     <Input
                       id="address"
                       required
                       placeholder={t("checkout.streetAddress")}
+                      value={formValues.address}
+                      onChange={(event) => updateAddressField("address", event.target.value)}
                       className="mt-1 text-base"
                     />
                   </div>
@@ -124,6 +239,8 @@ const Checkout = () => {
                         id="city"
                         required
                         placeholder={t("checkout.city")}
+                        value={formValues.city}
+                        onChange={(event) => updateAddressField("city", event.target.value)}
                         className="mt-1 text-base"
                       />
                     </div>
@@ -133,6 +250,8 @@ const Checkout = () => {
                         id="zip"
                         required
                         placeholder={t("checkout.zipCode")}
+                        value={formValues.zip}
+                        onChange={(event) => updateAddressField("zip", event.target.value)}
                         className="mt-1 text-base"
                       />
                     </div>
@@ -143,6 +262,8 @@ const Checkout = () => {
                       id="country"
                       required
                       placeholder={t("checkout.country")}
+                      value={formValues.country}
+                      onChange={(event) => updateAddressField("country", event.target.value)}
                       className="mt-1 text-base"
                     />
                   </div>
