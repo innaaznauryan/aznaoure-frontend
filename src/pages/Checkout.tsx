@@ -35,7 +35,17 @@ interface CheckoutFormValues {
 const Checkout = () => {
   const { i18n, t } = useTranslation();
   const lang = getLang(i18n.language);
-  const { state, totalPrice, shippingCost, grandTotal, isLoading } = useCart();
+  const {
+    state,
+    totalPrice,
+    shippingCost,
+    grandTotal,
+    hasStockIssues,
+    isCheckingAvailability,
+    isLoading,
+    hasError,
+    refetchCart,
+  } = useCart();
   const { user, isLoading: isAuthLoading } = useAuth();
   const { addresses, loading: areAddressesLoading } = useAddresses();
   const [selectedAddressId, setSelectedAddressId] = useState("");
@@ -49,6 +59,10 @@ const Checkout = () => {
     zip: "",
     country: "",
   });
+
+  useEffect(() => {
+    void refetchCart();
+  }, [refetchCart]);
 
   useEffect(() => {
     if (!user) return;
@@ -109,6 +123,17 @@ const Checkout = () => {
     );
   }
 
+  if (hasError) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">{t("cart.loadFailed")}</p>
+        <Button variant="luxuryOutline" onClick={() => void refetchCart()}>
+          {t("cart.retry")}
+        </Button>
+      </div>
+    );
+  }
+
   if (state.items.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center py-12 sm:py-24 px-4">
@@ -125,14 +150,6 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-secondary">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <Link
-          to="/cart"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 sm:mb-8"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {t("checkout.backToCart")}
-        </Link>
-
         <div className="grid lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12">
           {/* Checkout Form */}
           <motion.div
@@ -277,10 +294,10 @@ const Checkout = () => {
                 className="sm:size-xl w-full"
                 disabled
               >
-                {t("cart.orderPlacementUnavailable")}
+                {t(isCheckingAvailability ? "cart.checkingAvailability" : "cart.orderPlacementUnavailable")}
               </Button>
-              <p className="text-muted-foreground text-sm text-center">
-                {t("cart.checkoutUnavailableDescription")}
+              <p className={`text-sm text-center ${hasStockIssues ? "text-destructive" : "text-muted-foreground"}`}>
+                {t(hasStockIssues ? "cart.checkoutBlockedByStock" : "cart.checkoutUnavailableDescription")}
               </p>
             </form>
           </motion.div>
@@ -307,6 +324,11 @@ const Checkout = () => {
                       <p className="text-muted-foreground text-xs sm:text-sm">
                         {t("checkout.quantity", { count: item.quantity })}
                       </p>
+                      {item.quantity > item.product.available && (
+                        <p role="status" className="mt-1 text-xs text-destructive">
+                          {t(item.product.available <= 0 ? "products.outOfStock" : "cart.stockExceeded")}
+                        </p>
+                      )}
                     </div>
                     <p className="font-medium text-sm sm:text-base flex-shrink-0">
                       {formatPrice(item.product.price * item.quantity)}
@@ -337,6 +359,13 @@ const Checkout = () => {
             </div>
           </motion.div>
         </div>
+        <Link
+          to="/cart"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors my-6 sm:mb-8"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          {t("checkout.backToCart")}
+        </Link>
       </div>
     </div>
   );
