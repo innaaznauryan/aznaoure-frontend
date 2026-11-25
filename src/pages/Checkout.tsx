@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Info } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAddresses } from "@/hooks/use-addresses";
 import { getLang } from "@/lib/get-lang.ts";
 import { formatPrice } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CheckoutFormValues {
   email: string;
@@ -343,7 +344,27 @@ const Checkout = () => {
                   <span>{formatPrice(totalPrice)}</span>
                 </div>
                 <div className="flex justify-between text-sm sm:text-base">
-                  <span className="text-muted-foreground">{t("cart.shipping")}</span>
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    {t("cart.shipping")}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={t("cart.shippingInfo")}
+                          className="inline-flex rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <Info aria-hidden="true" className="h-3.5 w-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        side="top"
+                        align="start"
+                        className="w-auto max-w-[calc(100vw-2rem)] border-neutral-900 bg-neutral-900 px-3 py-2 text-sm text-white"
+                      >
+                        {t("cart.shippingInfo")}
+                      </PopoverContent>
+                    </Popover>
+                  </span>
                   <span className={shippingCost === 0 ? "text-primary" : "text-foreground"}>
                     {shippingCost === 0 ? t("cart.complimentary") : formatPrice(shippingCost)}
                   </span>
