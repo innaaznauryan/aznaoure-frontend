@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CartApiError } from "@/api/cart";
-import { X, LoaderCircle, Minus, Plus, ShoppingBag } from "lucide-react";
+import { X, LoaderCircle, Minus, Plus, ShoppingBag, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { getLang } from "@/lib/get-lang.ts";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { categories } from "@/lib/products";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const CartDrawer = () => {
   type PendingAction = { productId: string; action: "decrease" | "increase" | "remove" };
@@ -214,7 +215,27 @@ export const CartDrawer = () => {
                   <span className="font-serif">{formatPrice(totalPrice)}</span>
                 </div>
                 <div className="flex justify-between text-sm sm:text-base">
-                  <span className="text-muted-foreground">{t("cart.shipping")}</span>
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    {t("cart.shipping")}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={t("cart.shippingInfo")}
+                          className="inline-flex rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <Info aria-hidden="true" className="h-3.5 w-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        side="top"
+                        align="start"
+                        className="w-auto max-w-[calc(100vw-2rem)] border-neutral-900 bg-neutral-900 px-3 py-2 text-sm text-white"
+                      >
+                        {t("cart.shippingInfo")}
+                      </PopoverContent>
+                    </Popover>
+                  </span>
                   <span className={shippingCost === 0 ? "text-primary" : "text-foreground"}>
                     {shippingCost === 0 ? t("cart.complimentary") : formatPrice(shippingCost)}
                   </span>
