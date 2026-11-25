@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addCartItem, CartItem, fetchCart, removeCartItem, updateCartItem } from "@/api/cart";
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +9,8 @@ interface CartContextValue {
   totalPrice: number;
   shippingCost: number;
   grandTotal: number;
+  hasStockIssues: boolean;
+  isCheckingAvailability: boolean;
   isLoading: boolean;
   hasError: boolean;
   isUpdating: boolean;
@@ -36,6 +38,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     queryFn: fetchCart,
     enabled: Boolean(user) && !isAuthLoading,
   });
+  const refetchQuery = cartQuery.refetch;
 
   const invalidateCart = () => queryClient.invalidateQueries({ queryKey });
   const addMutation = useMutation({
@@ -59,6 +62,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
+  const hasStockIssues = items.some((item) => item.quantity > item.product.available);
   const shippingCost = totalPrice > FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST;
   const grandTotal = totalPrice + shippingCost;
 
@@ -81,6 +85,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     await removeMutation.mutateAsync(productId);
   };
 
+  const refetchCart = useCallback(async () => {
+    if (!user || isAuthLoading) return;
+    await refetchQuery();
+  }, [isAuthLoading, refetchQuery, user]);
+
   return (
     <CartContext.Provider
       value={{
@@ -89,10 +98,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         totalPrice,
         shippingCost,
         grandTotal,
+        hasStockIssues,
+        isCheckingAvailability: Boolean(user) && cartQuery.isFetching,
         isLoading: Boolean(user) && cartQuery.isLoading,
         hasError: Boolean(user) && cartQuery.isError,
         isUpdating: addMutation.isPending || updateMutation.isPending || removeMutation.isPending,
-        refetchCart: async () => { await cartQuery.refetch(); },
+        refetchCart,
         toggleCart: () => setIsOpen((open) => !open),
         closeCart: () => setIsOpen(false),
         addItem,

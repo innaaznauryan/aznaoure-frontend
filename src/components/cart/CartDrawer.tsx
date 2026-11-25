@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CartApiError } from "@/api/cart";
 import { X, LoaderCircle, Minus, Plus, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { useCart } from "@/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { getLang } from "@/lib/get-lang.ts";
@@ -15,9 +16,28 @@ export const CartDrawer = () => {
   type PendingAction = { productId: string; action: "decrease" | "increase" | "remove" };
   const { i18n, t } = useTranslation();
   const lang = getLang(i18n.language);
-  const { state, closeCart, removeItem, updateQuantity, totalItems, totalPrice, shippingCost, grandTotal, isLoading, hasError, isUpdating } = useCart();
+  const {
+    state,
+    closeCart,
+    removeItem,
+    updateQuantity,
+    totalItems,
+    totalPrice,
+    shippingCost,
+    grandTotal,
+    hasStockIssues,
+    isCheckingAvailability,
+    isLoading,
+    hasError,
+    isUpdating,
+    refetchCart
+  } = useCart();
   const { toast } = useToast();
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+
+  useEffect(() => {
+    if (state.isOpen) void refetchCart();
+  }, [refetchCart, state.isOpen]);
 
   const changeQuantity = async (productId: string, quantity: number, action: "decrease" | "increase") => {
     setPendingAction({ productId, action });
@@ -96,7 +116,9 @@ export const CartDrawer = () => {
             {/* Items */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               {isLoading ? (
-                <p className="text-center text-muted-foreground">{t("cart.loading")}</p>
+                <div className="flex justify-center items-center py-16">
+                  <Spinner />
+                </div>
               ) : hasError ? (
                 <p className="text-center text-muted-foreground">{t("cart.loadFailed")}</p>
               ) : state.items.length === 0 ? (
@@ -130,6 +152,11 @@ export const CartDrawer = () => {
                         <p className="text-muted-foreground text-xs sm:text-sm capitalize">
                           {categories[item.product.category].name[lang]}
                         </p>
+                        {item.quantity > item.product.available && (
+                          <p role="status" className="mt-1 text-xs text-destructive">
+                            {t(item.product.available <= 0 ? "products.outOfStock" : "cart.stockExceeded")}
+                          </p>
+                        )}
                         <p className="font-medium mt-1 text-sm sm:text-base">
                           {formatPrice(item.product.price)}
                         </p>
@@ -148,7 +175,7 @@ export const CartDrawer = () => {
                           </button>
                           <span className="w-6 sm:w-8 text-center text-sm sm:text-base">{item.quantity}</span>
                           <button
-                            disabled={isUpdating}
+                            disabled={isUpdating || item.quantity >= item.product.available}
                             onClick={() => changeQuantity(item.productId, item.quantity + 1, "increase")}
                             className="p-1 hover:bg-muted rounded-sm transition-colors"
                             aria-label={t("cart.increaseQuantity")}
@@ -196,15 +223,29 @@ export const CartDrawer = () => {
                   <span className="font-medium">{t("cart.total")}</span>
                   <span className="font-serif">{formatPrice(grandTotal)}</span>
                 </div>
-                <Button
-                  variant="luxury"
-                  size="lg"
-                  className="sm:size-xl w-full"
-                  onClick={closeCart}
-                  asChild
-                >
-                  <Link to="/checkout">{t("cart.proceedToCheckout")}</Link>
-                </Button>
+                {(hasStockIssues || isCheckingAvailability) && (
+                  <p
+                    role="status"
+                    className={`text-sm text-center ${isCheckingAvailability ? "text-muted-foreground" : "text-destructive"}`}
+                  >
+                    {t(isCheckingAvailability ? "cart.checkingAvailability" : "cart.checkoutBlockedByStock")}
+                  </p>
+                )}
+                {hasStockIssues || isCheckingAvailability ? (
+                  <Button variant="luxury" size="lg" className="sm:size-xl w-full" disabled>
+                    {t("cart.proceedToCheckout")}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="luxury"
+                    size="lg"
+                    className="sm:size-xl w-full"
+                    onClick={closeCart}
+                    asChild
+                  >
+                    <Link to="/checkout">{t("cart.proceedToCheckout")}</Link>
+                  </Button>
+                )}
                 <Button variant="luxuryOutline" className="w-full" onClick={closeCart} asChild>
                   <Link to="/cart">{t("cart.viewCart")}</Link>
                 </Button>
